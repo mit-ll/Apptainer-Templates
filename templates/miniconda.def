@@ -1,0 +1,48 @@
+Bootstrap: localimage
+From: save/core.sif
+
+%help
+
+%setup
+
+%files
+
+%environment
+
+    #=======================================================================
+    # Python
+    #=======================================================================
+    # Use local Python instead of global Python packages.
+    # Ref 1: https://stackoverflow.com/questions/35835274/how-to-reuse-global-site-packages-in-conda-env
+    export PYTHONNOUSERSITE=True
+
+%post
+
+    #=======================================================================
+    # Anaconda
+    #=======================================================================
+    readonly CONDA_INSTALLER="miniconda3.sh"
+    readonly CONDA_VERSION="Miniconda3-latest-Linux-x86_64.sh"
+    readonly CONDA_PREFIX="/opt/miniconda3"
+
+    wget https://repo.anaconda.com/miniconda/${CONDA_VERSION} -O ${CONDA_INSTALLER}
+    bash ${CONDA_INSTALLER} -b -p ${CONDA_PREFIX}
+    rm ${CONDA_INSTALLER}
+
+    # Set Pathing
+    export CONDA_PYTHON_EXE=${CONDA_PREFIX}/bin/python
+    export PATH=$PATH:${CONDA_PREFIX}/bin
+
+    #=======================================================================
+    # Configure Login Shell
+    #=======================================================================
+    echo '. /opt/miniconda3/etc/profile.d/conda.sh' >> ~/.bashrc
+    echo 'conda activate base' >> ~/.bashrc
+
+%runscript
+
+%startscript
+
+%test
+
+%labels

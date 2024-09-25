@@ -1,0 +1,119 @@
+bootstrap: docker
+From: ubuntu:22.04
+# From: nvidia/cuda:11.8.0-base-ubuntu22.04
+Stage: build
+
+%help
+    This Singularity definition contains a base development environment.
+
+     Use below commands:
+
+     *Build production container* - This will build immutable container (recommended for production environments):
+     $ sudo singularity build <name>.sif <name>.def
+     $ sudo chmod 777 <name>.sif
+
+     *Add a 1 GiB writable overlay partition to an existing SIF image:
+     $ singularity overlay create --size 1024 <name>.sif
+
+     *Shell into singularity container*
+     $ singularity shell --contain --writable <name>.sif
+
+        --contain
+          use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host
+        --writable
+          by default all Singularity containers are available as read only. This option makes the file system accessible as read/write.
+        --nv
+          enable Nvidia GPU support
+
+     *Binding to a volume requires a mount point inside your singularity container
+     $ singularity shell --bind host_mnt:container_mnt --writable <name>.sif
+
+     *Running VsCode from singularity container (attach to host session)
+     $ singularity run --nv -B /run/user/$(id -u):/run/user/$(id -u) <name>.sif
+
+%setup
+
+%files
+
+%environment
+    #=======================================================================
+    # Common Settings
+    #=======================================================================
+    # Ref 1: https://unix.stackexchange.com/questions/87745/what-does-lc-all-c-do
+    # Ref 2: https://unix.stackexchange.com/questions/168340/where-is-ld-library-path-how-do-i-set-the-ld-library-path-env-variable
+    export HOME="/domi"
+    export LISTEN_PORT=12345
+    export LC_ALL=C
+    export PATH=/root/.local/bin:/usr/local/bin:/usr/local/sbin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH
+    export SINGULARITY_SHELL=/bin/bash
+
+    #=======================================================================
+    # Frontend
+    #=======================================================================
+    # Perform installation without requiring interactive user input.
+    # Ref 1: https://askubuntu.com/questions/972516/debian-frontend-environment-variable
+    export DEBIAN_FRONTEND=noninterative
+
+%post
+    #=======================================================================
+    # Packages/Applications
+    #=======================================================================
+    apt-get update
+    apt-get install -y curl fd-find fzf gcc git g++ make htop netcat neofetch ripgrep tree vim wget zsh
+    apt-get clean
+
+
+    #=======================================================================
+    # Setup directories
+    #=======================================================================
+    mkdir -p /dev
+    mkdir -p /opt
+
+    #=======================================================================
+    # Shell Preferences
+    #=======================================================================
+    export HOME="/domi"
+    export OSH="${HOME}/.oh-my-bash"; bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+
+    #=======================================================================
+    # Vim Preferences
+    #=======================================================================
+    git clone --depth=1 https://github.com/amix/vimrc.git ~/.vim_runtime
+    sh ~/.vim_runtime/install_awesome_vimrc.sh
+
+    #=======================================================================
+    # Neovim
+    #=======================================================================
+    readonly NEOVIM_SRC="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+    wget ${NEOVIM_SRC} -O ~/nvim-linux64.tar.gz
+    tar -C /opt -xzf ~/nvim-linux64.tar.gz
+    git clone https://github.com/NvChad/starter ~/.config/nvim
+
+    #=======================================================================
+    # File Permissions
+    #=======================================================================
+    # Make all files accessible
+    chmod --recursive 777 /opt
+    chmod --recursive 777 /domi
+
+    #=======================================================================
+    # Configure Login Shell
+    #=======================================================================
+    echo 'cd $HOME' >> ~/.bashrc
+    echo 'neofetch' >> ~/.bashrc
+    echo 'export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring' >> ~/.bashrc
+    echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.bashrc
+
+%runscript
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+%startscript
+    export LC_ALL=C.UTF-8 # Sets locale to UTF-8
+    export LANG=C.UTF-8 # Sets locale to UTF-8
+    nc -lp $LISTEN_PORT
+
+%test
+
+%labels

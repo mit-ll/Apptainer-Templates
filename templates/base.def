@@ -1,0 +1,20 @@
+Bootstrap: localimage
+From: save/miniconda.sif
+
+%post
+
+    #=======================================================================
+    # Anaconda
+    #=======================================================================
+    # The following variables must be set in order for the def file to use Anaconda
+    export CONDA_PREFIX="/opt/miniconda3"
+    export PATH=$PATH:${CONDA_PREFIX}/bin
+
+    #=======================================================================
+    # Using Custom Conda Environments
+    #=======================================================================
+    # Ref: https://stackoverflow.com/questions/59877249/activating-a-conda-environment-in-a-singularity-recipe
+    conda create -n myenv python=3.10
+    . /opt/miniconda3/etc/profile.d/conda.sh
+    conda activate myenv
+    pip install ray
