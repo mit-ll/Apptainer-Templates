@@ -66,10 +66,10 @@ The overlay is a separate file storage that is owned by the user who created it.
 
 
 ## Tests
-The built-in tests included building (1) mamba image, (2) miniconda image, and (3) a base image.  The base image is likely your starting point for any project as it will include miniconda with Ubuntu 22.04 and the ability to add any additional Conda environments of your choosing.
+The built-in tests included building a base image and a miniconda image.  The base image is likely your starting point for any project as it will include miniconda with Ubuntu 22.04 and the ability to add any additional Conda environments of your choosing.
 
 ```console
-python tests/build_test.py
+pytest tests/
 ```
 
 # 😎 Advance Concepts
@@ -81,11 +81,6 @@ In order to convert a Dockerfile into a Singularity image file the order of oper
 docker build -t local/<my_container>:latest .
 
 sudo singularity build <my_container>.sif docker-daemon://local/<my_container>:latest
-```
-
-An example can be found under `tests/convert_test.sh`.  To execute the test:
-```console
-python tests/convert_test.py
 ```
 
 ## Activating Anaconda
